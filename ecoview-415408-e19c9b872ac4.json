@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ecoview-415408",
+  "private_key_id": "e19c9b872ac47defcc011db966b192abfb293970",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDAt9dI5VchX9cS\nqGZOcKThbCmBkZXfHNMW7eE9E1f1We4/z5nAbS6i7Tkp1+77B9X66wUQX5n1xuaV\nd6a1D5DKmwkOprpj+0UjsbCrFJpzTwKQna6h+1ECKJuZGp5NJDA4pLDOkwQYrhkT\nKe39CW3mAJhunomGRZEGOpfq3yDEqFQdgoDWV8/6BqpkdPaqArMsz8drfhCC3ftL\n4PsxPRsARWr+rUF+lI9bwo70DDOr6nH7jV+Z1u2uLUNU2o7q1/42/fuOK5xide1Z\nTo2MZhBZ0rgzL7msQfQuEF1Xmi5rn5ZFwD6rzMpXgXgDS/l0dpiti19OKcb8z2vj\nYlLfkBSXAgMBAAECggEALIzTGajaoX50S33eWJe1pd7JIYi0KqWRLqXDAcls9eza\nJKorEs6qj0NjiYa/WgyPrLeTrhtLjgNy3m6QfR6iDBQW3eoxAFffvcaf3oyev7Uu\nFJw++HcOXP9iKNx8Z7zL4OxBax+VPNdSOJniyDHb0+WjVz8S75U5V0VIRSVbf9o6\n+rtx0MUiTmv1ZnbRUKjX9WeUprkglvlqTjAgHVVF77LdCYKe+r0ulH/9vWbO9rf0\nQiNaY4wEM1AwCs3mJ2i1+fpUyje4wndY4KBGPjOP45d8X9Oy19S2iPjW5fbos7rS\njUv8BH+TfPEiwo7heox8/Th3tamwi5sTwXq6/QRVAQKBgQDoe7hhIz+ZjrpX2qq2\nWr522H8tX4z3z4ZPiziHUIiR99+4/HiVoG2F2++WC6wCTVG6lINUF2CQIn0WP99R\ngwzJsvxpVVgL7EcPcpeZTm812V2l+O6uAHHpxXihflUpMyTZeLoqNozXis2p69UA\nE3aC1LOORe2KcvGIf1fXxWr01wKBgQDUNmFzRZ2EZIAzim2wfD7aDFamccVgevAZ\nqW7thDe1Ho2yVxsDLAxRBAWgpPp/ErXdhaoXSfvCkkWQBKAcgByg62owTreZWL7Y\noS2YT4Hi3RE02HuaBnWZGRUvNmm1/lNccr9KSS//S49G+5+YdqFDaHuKF+0vgWP3\nHi18J3AmQQKBgQDTJyu77kvhqKTPDqhmn9zGDLTV/ScIHNCchpJ9NEQWb9AfMBBF\ntkRDhBMDcO512MwWbrUpN2JZBzodbz3hxulieNKQyRcDHUMdYLMYZwjTG+3WxVXj\nbDwKW3TJGPk4Rl99tg1AMfOSAVvyrWP0gbjt80pyOkkZqnR9yUt7iq8uWQKBgADj\n9Ya5TQ7oKQ2OUCWEb/MUSCzMn2pnOaix6FBA1McCyM9txCRARBD29lsVNiPgXTj/\nvZX5boADgx02l8Fm3DfkpP5s5iJTmAFqs7lG5CGikdbp7aLY0heBXnBjRxBHb+wc\nYycZpYTpuUEv/xxxqv2Qa6xJq2oend/ElaZGuBbBAoGBAJH2TA4hgoxQJ/nZMNSR\nok4A9xhMIGYz7j+byhoMDqF0MRmT4xSJlylgYYoNbcysxzEhUW6JJqWyJa4Zgxcj\nW5qtIbmQqfcm/EMU44DB22v6M0CNfoN/+tPHt7/ErEOwOmbb7lFPIKAlp2hkR2jf\nbXMcZb7x24k1ofnY4VoNJmoh\n-----END PRIVATE KEY-----\n",
+  "client_email": "ecolens-ml@ecoview-415408.iam.gserviceaccount.com",
+  "client_id": "105910457722938207209",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ecolens-ml%40ecoview-415408.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

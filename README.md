@@ -29,6 +29,49 @@ EcoLens Machine Learning  is a project that integrates advanced machine learning
 7. **Continuous Learning and Model Updates:**
    - Establish a system for continuous learning, ensuring machine learning models are regularly updated based on new data and user interactions.
 
+
+## Technical Architecture
+<img src=".github/assets/components.jpg" alt="Components" width="700"/>
+
+**Components**
+
+* **ecolens_ml** 
+   * **Purpose:**  Houses machine learning (ML) models and associated logic.  
+   * **Technologies:** Cloud Run, AI Platform, PyTorch
+   * **Functions:** Image Label Recognition, Product Classification (if eco-focused), Predictive Analytics, Data augmentation and generation.
+
+* **cloudvision** (Google Cloud Vision API)
+   * **Purpose:** Extracts text from product labels using optical character recognition (OCR)
+   * **Functions:** Image classification, OCR (text recognition) etc.
+
+* **ecodome** (Heavy Stuff)
+
+   **Components of Ecodome**
+
+   * **Google Search**
+      * **Purpose:** Integrates with Google's search capabilities, allowing users to search within the system's data or potentially leveraging broader web search results.
+
+   * **Image Similarity Search**
+      * **Purpose:** Leverages Google Lens's Image Searching capabilities through SerpAPI. To find images similar to a user uploaded image.
+
+   * **Gemini LLM**
+      * **Purpose:** Integrates with a large language model (LLM), Google's Gemini Pro. This unlocks advanced language understanding and text-based interactions.
+
+   * **Knowledge Engine**
+      * **Purpose:** To construct and manage a knowledge graph. This structured representation of data enhances search and information retrieval.
+      
+   * **QnA API**
+      * **Purpose:**  Provides a question-answering interface powered by the knowledge base and LLM capabilities. Users can ask natural language questions.
+
+   * **Environment Data Synthesis**
+      * **Purpose:**  Aggregates and processes environmental data from sources like Google Search and EPDs, potentially generating insights and enhancing Knowledge
+
+* **EPD Data**
+   * **Purpose:** Stores Environmental Product Declarations (EPDs) used to communicate the environmental performance of products and materials.
+
+* **Google Cloud PUB/SUB**
+   * **Purpose:** A messaging service enabling asynchronous communication and decoupling of microservices.
+
 ## Datasets
 
 For training and validation, the following types of datasets are used:
