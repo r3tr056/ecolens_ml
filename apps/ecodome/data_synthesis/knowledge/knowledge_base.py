@@ -1,11 +1,19 @@
-
+import os
+import logging
+import json
+import time
+from pathlib import Path
+from typing import Optional, List, Dict, Any, Tuple, Union
+from functools import lru_cache
 from tqdm import tqdm
-from typing import Optional, List
 
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders.directory import DirectoryLoader
+from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.chains import GraphCypherQAChain
 from langchain.text_splitter import TokenTextSplitter
+from langchain.vectorstores.faiss import FAISS
+from langchain.schema import Document
 from langchain_community.graphs.graph_document import (
     Node as BaseNode,
     Relationship as BaseRel,
@@ -13,14 +21,51 @@ from langchain_community.graphs.graph_document import (
 )
 
 from apps.ecodome.data_synthesis.knowledge.models import Relationship, Node, KnowledgeGraph
+from apps.ecodome.data_synthesis.knowledge.cache import KnowledgeCacheManager
+
+logger = logging.getLogger(__name__)
 
 class KnowledgeBase:
-    def __init__(self, n4j_graph, pdf_source_folder_path: str) -> None:
-        """
-        Load pdf and create a knowledge base using the Chroma vector DB
-        """
+    def __init__(self, n4j_graph, embedding_model, data_sources_path: str, cache_dir: Optional[str] = None, chunk_size: int = 1024, chunk_overlap: int = 100) -> None:
         self.n4j_graph = n4j_graph
-        self.pdf_source_folder_path = pdf_source_folder_path
+        self.embedding_model = embedding_model
+        self.data_sources_path = Path(data_sources_path)
+        self.cache_dir = Path(cache_dir) if cache_dir else Path("./.runtime/kb_cache")
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.cache_manager = KnowledgeCacheManager(str(self.cache_dir))
+
+        self.vector_stores = {}
+        self._initialize_vector_stores()
+
+        self.schema = self._get_schema()
+
+    def _initialize_vector_stores(self):
+        vector_store_path = self.cache_dir / "vector_stores"
+        vector_store_path.mkdir(exist_ok=True)
+
+        try:
+            for store_dir in vector_store_path.iterdir():
+                if store_dir.is_dir():
+                    store_name = store_dir.name
+                    try:
+                        self.vector_stores[store_name] = FAISS.load_local(str(store_dir), self.embedding_model)
+                        logger.info(f"Loaded vector store: {store_name}")
+                    except Exception as e:
+                        logger.warning(f"Could not load vector store {store_name}: {e}")
+        except Exception as e:
+            logger.warning(f"Error initializing vector stores: {e}")
+
+    def _get_schema(self) -> Dict[str, Any]:
+        """Get the schema information from Neo4j"""
+        try:
+            self.n4j_graph.refresh_schema()
+            return self.n4j_graph.schema
+        except Exception as e:
+            logger.error(f"Failed to get schema: {e}")
+            return {}
 
     def add_dict_to_graphdb(self, data):
         for node_label, properties in data.items():
@@ -36,6 +81,7 @@ class KnowledgeBase:
                 self.n4j_graph.create(relation)
 
     def format_property_key(self, s: str) -> str:
+        """Format property keys in camelCase"""
         words = s.split()
         if not words:
             return s
@@ -63,28 +109,73 @@ class KnowledgeBase:
         properties = self.props_to_dict(rel.properties) if rel.properties else {}
         return BaseRel(source=source, target=target, type=rel.type, properties=properties)
 
-    def load_pdfs(self):
-        loader = DirectoryLoader(self.pdf_source_folder_path)
-        loaded_pdfs = loader.load()
-        return loaded_pdfs
+    def load_documents(self, refresh: bool = False) -> List[Document]:
+        """Loads documents from data sources"""
+        cache_key = f"loaded_docs_{self.data_sources_path}"
 
-    def split_docs(self, loaded_docs, chunk_size=2048, chunk_overlap=24):
-        splitter = TokenTextSplitter(chunk_size, chunk_overlap)
-        chunked_docs = splitter.split_documents(loaded_docs)
+        if not refresh:
+            cached_docs = self.cache_manager.get(cache_key)
+            if cached_docs:
+                logger.info(f"Loaded {len(cached_docs)} documents from cache")
+                return cached_docs
+
+        all_docs = []
+        try:
+            for file_path in self.data_sources_path.glob('**/*'):
+                if file_path.is_file():
+                    try:
+                        if file_path.suffix.lower() == '.pdf':
+                            loader = PyPDFLoader(str(file_path))
+                            docs = loader.load()
+                        elif file_path.suffix.lower() in ['.txt', '.md', '.json']:
+                            loader = TextLoader(str(file_path))
+                            docs = loader.load()
+                        else:
+                            # add more loaders here
+                            continue
+
+                        all_docs.extend(docs)
+                    except Exception as e:
+                        logger.warning(f"Failed to load {file_path}: {e}")
+        except Exception as e:
+            logger.error(f"Error loading documents: {e}")
+
+        if all_docs:
+            self.cache_manager.set(cache_key, all_docs)
+            logger.info(f"Loaded and cached {len(all_docs)} documents")
+        return all_docs
+
+    def split_docs(self, docs: List[Documents]) -> List[Document]:
+        splitter = TokenTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
+        chunked_docs = splitter.split_documents(docs)
         return chunked_docs
 
-    def add_docs_to_graph(self, chunked_docs, llm):
-        for i, d in tqdm(enumerate(chunked_docs), total=len(chunked_docs)):
-            self.extract_and_storage_graph(llm=llm, document=d)
+    def build_knowledge_graph(self, llm, docs: Optional[List[Document]] = None, batch_size: int = 5) -> None:
+        """Build knowledge graph from documents"""
+        if docs is None:
+            docs = self.load_documents()
 
-    def add_text_to_graph(self, text, llm):
-        extract_chain = self.get_knowledge_extraction_chain(llm=llm)
-        data = extract_chain.run(text)
-        graph_document = GraphDocument(
-            nodes=[self.map_to_base_node(node) for node in data.nodes],
-            relationships=[self.map_to_base_relationship(rel) for rel in data.rels],
-        )
-        self.n4j_graph.add_graph_documents([graph_document])
+        chunked_docs = self.split_docs(docs)
+        total = len(chunked_docs)
+
+        logger.info(f"Building knowledge graph from {total} document chunks")
+        batches = [chunked_docs[i:i + batch_size] for i in range(0, len(chunked_docs), batch_size)]
+
+        for i, batch in enumerate(batches):
+            try:
+                node_types = list(self.schema.get("node_props", {}).keys()) if self.schema else []
+                rel_types = list(self.schema.get("rel_props", {}).keys()) if self.schema else []
+
+                self._process_document_batch(llm, batch, node_types, rel_types)
+            except Exception as e:
+                logger.error(f"Error processing batch {i}: {e}")
+
+        self._get_schema()
+        logger.info("Knowledge graph build successfully")
+
+    def _process_document_batch(self, llm, docs: List[Document], allowed_nodes: Optional[List[str]] = None, allowed_rels: Optional[List[str]] = None) -> None:
+        """Process a batch of documents and add to the knowledge graph"""
+        pass
 
     def extract_and_store_graph(self, llm, document, nodes, rels):
         extract_chain = self.get_knowledge_extraction_chain(llm, nodes, rels)
@@ -102,7 +193,7 @@ class KnowledgeBase:
         prompt = ChatPromptTemplate.from_messages(
             [(
                 "system",
-                f"""# Knowledge Graph Instructions for GPT-4
+                f"""# Knowledge Graph Instructions for Gemini
     ## 1. Overview
     You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph.
     - **Nodes** represent entities and concepts. They're akin to Wikipedia nodes.
