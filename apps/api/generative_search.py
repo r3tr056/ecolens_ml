@@ -3,6 +3,7 @@ import os
 import logging
 from hashlib import blake2b
 from flask import jsonify, request, session, Blueprint
+from flask_cors import cross_origin
 
 from langchain.storage import LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
@@ -31,6 +32,7 @@ chat_model = ChatGoogleGenerativeAI(
 )
 
 @gen_search_bp.post('/gensearch')
+@cross_origin()
 @api_key_required(required_role='user')
 def generative_search_api():
     try:
@@ -57,6 +59,7 @@ def generative_search_api():
         return jsonify({"error": f"Error occured : {e}"}), 500
     
 @gen_search_bp.post('/ingest_docs')
+@cross_origin()
 @api_key_required(required_role='user')
 def ingest_docs():
     try:
